@@ -315,9 +315,9 @@
 			background: rgba(99, 102, 241, 0.1);
 		}
 
-		/* Block separator lines */
-		.cell[data-col="2"],
-		.cell[data-col="5"] {
+		/* Block separator lines (RTL: col 0 is rightmost) */
+		.cell[data-col="3"],
+		.cell[data-col="6"] {
 			border-right: 2px solid var(--block-line);
 		}
 
@@ -950,17 +950,33 @@
 			puzzle = Array(9).fill().map(() => Array(9).fill(0));
 
 			let cellsToFill;
+			let maxPerBox;
 			switch(difficulty) {
-				case 'easy': cellsToFill = 51; break;
-				case 'medium': cellsToFill = 41; break;
-				case 'hard': cellsToFill = 31; break;
+				case 'easy': cellsToFill = 51; maxPerBox = 7; break;
+				case 'medium': cellsToFill = 41; maxPerBox = 6; break;
+				case 'hard': cellsToFill = 31; maxPerBox = 5; break;
+			}
+
+			// Count how many cells are filled per 3x3 box
+			function getBoxCount(r, c) {
+				const br = Math.floor(r / 3) * 3;
+				const bc = Math.floor(c / 3) * 3;
+				let count = 0;
+				for (let i = br; i < br + 3; i++) {
+					for (let j = bc; j < bc + 3; j++) {
+						if (puzzle[i][j] !== 0) count++;
+					}
+				}
+				return count;
 			}
 
 			let filledCells = 0;
-			while (filledCells < cellsToFill) {
+			let attempts = 0;
+			while (filledCells < cellsToFill && attempts < 5000) {
 				let row = Math.floor(Math.random() * 9);
 				let col = Math.floor(Math.random() * 9);
-				if (puzzle[row][col] === 0) {
+				attempts++;
+				if (puzzle[row][col] === 0 && getBoxCount(row, col) < maxPerBox) {
 					puzzle[row][col] = solution[row][col];
 					filledCells++;
 				}
