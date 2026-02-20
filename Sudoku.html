@@ -263,7 +263,7 @@
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
-            margin-bottom: 140px;
+			padding-bottom: 2rem;
         }
 
 		.board-wrapper {
@@ -595,40 +595,36 @@
 			color: #6ee7b7;
         }
 
-		/* Virtual keyboard */
+		/* Virtual keyboard - inline under board */
         .virtual-keyboard {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--keyboard-bg);
-			backdrop-filter: blur(20px);
-            padding: 0.75rem 0.5rem;
-			padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+			width: 100%;
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(2, auto);
-            gap: 0.4rem;
-            border-top: 1px solid var(--glass-border);
-            transform: translateY(100%);
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
-			box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+            grid-template-columns: repeat(10, 1fr);
+            gap: 0.35rem;
+			margin-top: 0.75rem;
+			position: relative;
+			z-index: 1;
+			opacity: 0;
+			transform: translateY(8px);
+			transition: opacity 0.3s ease, transform 0.3s ease;
+			pointer-events: none;
         }
 
         .virtual-keyboard.active {
-            transform: translateY(0);
+			opacity: 1;
+			transform: translateY(0);
+			pointer-events: auto;
         }
 
         .key {
 			font-family: var(--font-heading);
-            height: 48px;
+            aspect-ratio: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
 			font-weight: 600;
-            background: rgba(30, 41, 69, 0.6);
+            background: rgba(30, 41, 69, 0.5);
 			border: 1px solid var(--glass-border);
             border-radius: var(--radius-md);
             cursor: pointer;
@@ -639,47 +635,35 @@
         }
 
 		.key:hover {
-			background: rgba(99, 102, 241, 0.15);
-			border-color: rgba(99, 102, 241, 0.3);
+			background: rgba(99, 102, 241, 0.2);
+			border-color: rgba(99, 102, 241, 0.4);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 		}
 
         .key:active {
             background: var(--primary);
-            transform: scale(0.93);
+            transform: scale(0.9) translateY(0);
 			border-color: var(--primary-light);
+			box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
         }
 
 		.key.completed-number {
-			opacity: 0.3;
+			opacity: 0.25;
 			pointer-events: none;
 		}
 
-        .key[data-value="1"],
-        .key[data-value="2"],
-        .key[data-value="3"],
-        .key[data-value="4"],
-        .key[data-value="5"] {
-            grid-row: 1;
-        }
-
-        .key[data-value="6"],
-        .key[data-value="7"],
-        .key[data-value="8"],
-        .key[data-value="9"],
         .key.delete {
-            grid-row: 2;
-        }
-
-        .key.delete {
-            grid-column: 5;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
 			color: var(--error-color);
 			border-color: rgba(244, 63, 94, 0.15);
+			aspect-ratio: 1;
         }
 
 		.key.delete:hover {
-			background: rgba(244, 63, 94, 0.1);
-			border-color: rgba(244, 63, 94, 0.3);
+			background: rgba(244, 63, 94, 0.15);
+			border-color: rgba(244, 63, 94, 0.4);
+			box-shadow: 0 4px 12px rgba(244, 63, 94, 0.15);
 		}
 
 		.key.delete:active {
@@ -726,17 +710,12 @@
 				font-size: 2rem;
 			}
 
-            .board-container {
-                margin-bottom: 120px;
-            }
-
             .cell {
                 font-size: 1.1rem;
             }
 
             .key {
-                height: 42px;
-                font-size: 1.15rem;
+                font-size: 1.1rem;
             }
 
             button {
@@ -809,19 +788,19 @@
 		<div class="board-wrapper">
 			<div class="board"></div>
 		</div>
+		<div class="virtual-keyboard">
+			<div class="key" data-value="1">1</div>
+			<div class="key" data-value="2">2</div>
+			<div class="key" data-value="3">3</div>
+			<div class="key" data-value="4">4</div>
+			<div class="key" data-value="5">5</div>
+			<div class="key" data-value="6">6</div>
+			<div class="key" data-value="7">7</div>
+			<div class="key" data-value="8">8</div>
+			<div class="key" data-value="9">9</div>
+			<div class="key delete" data-value="delete">✕</div>
+		</div>
 		<div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="virtual-keyboard">
-        <div class="key" data-value="1">1</div>
-        <div class="key" data-value="2">2</div>
-        <div class="key" data-value="3">3</div>
-        <div class="key" data-value="4">4</div>
-        <div class="key" data-value="5">5</div>
-        <div class="key" data-value="6">6</div>
-        <div class="key" data-value="7">7</div>
-        <div class="key" data-value="8">8</div>
-        <div class="key" data-value="9">9</div>
-        <div class="key delete" data-value="delete">✕ מחק</div>
     </div>
 
 	<!-- Victory overlay -->
