@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+	<meta charset="UTF-8">
+    <title>משחק סודוקו</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+	
+        :root {
+			--primary: #4f46e5;
+			--primary-hover: #4338ca;
+			--bg-color: #0f172a;
+			--cell-bg: #1e293b;
+			--cell-given-bg: #334155;
+			--text-color: #e2e8f0;
+			--error-color: #ef4444;
+			--success-color: #22c55e;
+			--border-color: #475569;
+			--keyboard-bg: #1e293b;
+			--selected-bg: #3b82f6;
+			--completed-bg: rgba(74, 222, 128, 0.15);
+			--grid-line: rgba(255, 255, 255, 0.1);
+			--block-line: rgba(255, 255, 255, 0.5);
+			--selected-bg: rgba(59, 130, 246, 0.5);
+			--selected-border: #3b82f6;
+			--row-col-completed: rgba(74, 222, 128, 0.05);
+			--font-heading: 'Rubik', sans-serif;
+			--font-body: 'Heebo', sans-serif;
+		}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        h1 {
+			font-family: var(--font-heading);
+			font-weight: 700;
+			font-size: 3rem;
+			margin-bottom: 1.5rem;
+			text-align: center;
+			background: linear-gradient(45deg, var(--primary), #818cf8);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			letter-spacing: -0.02em;
+		}
+
+        .controls {
+            margin: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+			font-family: var(--font-heading);
+			font-weight: 500;
+			letter-spacing: 0.02em;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            outline: none;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .board-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            margin-bottom: 140px;
+        }
+
+		
+
+		.board {
+			position: relative;
+			background: var(--border-color);
+			border-radius: 1rem;
+			padding: 0.5rem;
+			display: grid;
+			grid-template-columns: repeat(9, 1fr);
+			gap: 1px;
+			aspect-ratio: 1;
+			box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
+                0 0 20px rgba(0, 0, 255, 0.1),
+                0 0 30px rgba(0, 0, 255, 0.1);
+			animation: neonPulse 2s infinite;
+		}
+
+		.cell {
+			font-family: var(--font-heading);
+			font-weight: 600;
+			aspect-ratio: 1;
+			background: var(--cell-bg);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.5rem;
+			transition: all 0.2s ease;
+			user-select: none;
+			color: var(--text-color);
+			position: relative;
+			border-right: 1px solid var(--grid-line);
+			border-bottom: 1px solid var(--grid-line);
+		}
+
+		@keyframes neonPulse {
+			0% {
+				box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
+						   0 0 20px rgba(0, 0, 255, 0.1),
+						   0 0 30px rgba(0, 0, 255, 0.1);
+			}
+			50% {
+				box-shadow: 0 0 15px rgba(0, 0, 255, 0.3),
+						   0 0 25px rgba(0, 0, 255, 0.2),
+						   0 0 35px rgba(0, 0, 255, 0.1);
+			}
+			100% {
+				box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
+						   0 0 20px rgba(0, 0, 255, 0.1),
+						   0 0 30px rgba(0, 0, 255, 0.1);
+			}
+		}
+
+		/* קווי הפרדה אנכיים בין הבלוקים */
+		.cell[data-col="3"],
+		.cell[data-col="6"] {
+			border-right: 2px solid var(--block-line);
+		}
+
+		/* קווי הפרדה אופקיים בין הבלוקים */
+		.cell[data-row="2"],
+		.cell[data-row="5"] {
+			border-bottom: 2px solid var(--block-line);
+		}
+
+		/* הסרת גבול ימני מהעמודה האחרונה */
+		.cell[data-col="8"] {
+			border-right: none;
+		}
+
+		/* הסרת גבול תחתון מהשורה האחרונה */
+		.cell[data-row="8"] {
+			border-bottom: none;
+		}
+
+		.cell.row-completed {
+			background-color: rgba(74, 222, 128, 0.05) !important;
+		}
+
+		.cell.col-completed {
+			background-color: rgba(74, 222, 128, 0.05) !important;
+		}
+
+		/* כאשר גם השורה וגם העמודה מושלמות */
+		.cell.row-completed.col-completed {
+			background-color: rgba(74, 222, 128, 0.1) !important;
+		}
+
+		/* כדי לוודא שהתא הנבחר תמיד יהיה בולט יותר */
+		.cell.selected {
+			background: var(--selected-bg) !important;
+			box-shadow: inset 0 0 0 2px var(--selected-border);
+		}
+		
+		.cell.given {
+			background: var(--cell-given-bg);
+			color: #93c5fd;
+			font-weight: 700;
+		}
+
+		.cell.invalid {
+			background: rgba(239, 68, 68, 0.2);
+		}
+
+        .box-highlight {
+            position: absolute;
+            pointer-events: none;
+            background: transparent;
+            transition: background-color 0.3s ease;
+        }
+
+        .box-highlight.completed {
+            background: var(--completed-bg);
+			color: black !important;
+        }
+		
+		.cell.selected {
+			background: var(--selected-bg);
+			box-shadow: inset 0 0 0 2px var(--selected-border);
+			animation: selectPulse 2s infinite;
+		}
+
+		@keyframes selectPulse {
+			0% { box-shadow: inset 0 0 0 2px var(--selected-border); }
+			50% { box-shadow: inset 0 0 0 3px var(--selected-border); }
+			100% { box-shadow: inset 0 0 0 2px var(--selected-border); }
+		}
+
+		.cell.row-completed {
+			background: var(--row-col-completed);
+		}
+
+		.cell.col-completed {
+			background: var(--row-col-completed);
+		}
+
+		/* מניעת הצטלבות של שורה ועמודה מלאות */
+		.cell.row-completed.col-completed {
+			background: var(--row-col-completed);
+			opacity: 0.8;
+		}
+
+
+        .virtual-keyboard {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--keyboard-bg);
+            padding: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, auto);
+            gap: 0.25rem;
+            border-top: 2px solid var(--border-color);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .virtual-keyboard.active {
+            transform: translateY(0);
+        }
+
+        .key {
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background: var(--cell-bg);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+
+        .key:active {
+            background: var(--selected-bg);
+            transform: scale(0.95);
+        }
+
+        .key[data-value="1"],
+        .key[data-value="2"],
+        .key[data-value="3"],
+        .key[data-value="4"],
+        .key[data-value="5"] {
+            grid-row: 1;
+        }
+
+        .key[data-value="6"],
+        .key[data-value="7"],
+        .key[data-value="8"],
+        .key[data-value="9"],
+        .key.delete {
+            grid-row: 2;
+        }
+
+        .key.delete {
+            grid-column: 5;
+            font-size: 1rem;
+        }
+
+        .message {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            text-align: center;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .message.show {
+            opacity: 1;
+        }
+
+        .message.error {
+            background: var(--error-color);
+        }
+
+        .message.success {
+            background: var(--success-color);
+        }
+		
+		@keyframes victory-pulse {
+			0% {
+				transform: scale(1);
+				box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+			}
+			70% {
+				transform: scale(1.05);
+				box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
+			}
+			100% {
+				transform: scale(1);
+				box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+			}
+		}
+
+		@keyframes cell-victory {
+			0% { background-color: var(--cell-bg); }
+			50% { background-color: rgba(74, 222, 128, 0.2); }
+			100% { background-color: var(--cell-bg); }
+		}
+
+		.board.completed {
+			animation: victory-pulse 2s infinite;
+		}
+
+		.board.completed .cell {
+			animation: cell-victory 2s infinite;
+			animation-delay: calc(var(--cell-index) * 0.1s);
+		}
+
+		.victory-message {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: rgba(74, 222, 128, 0.95);
+			color: white;
+			padding: 2rem;
+			border-radius: 1rem;
+			font-size: 1.5rem;
+			font-weight: bold;
+			text-align: center;
+			z-index: 1000;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.3s ease;
+		}
+
+		.victory-message.show {
+			opacity: 1;
+		}
+	
+
+        @media (max-width: 600px) {
+            .board-container {
+                margin-bottom: 120px;
+            }
+
+            .cell {
+                font-size: 1.2rem;
+            }
+
+            .key {
+                height: 40px;
+                font-size: 1.1rem;
+            }
+
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>סודוקו</h1>
+    <div class="controls">
+        <button onclick="startGame('easy')">קל</button>
+        <button onclick="startGame('medium')">בינוני</button>
+        <button onclick="startGame('hard')">קשה</button>
+        <button onclick="checkSolution()">בדוק פתרון</button>
+    </div>
+    <div class="message"></div>
+    <div class="board-container">
+        <div class="board"></div>
+    </div>
+    <div class="virtual-keyboard">
+        <div class="key" data-value="1">1</div>
+        <div class="key" data-value="2">2</div>
+        <div class="key" data-value="3">3</div>
+        <div class="key" data-value="4">4</div>
+        <div class="key" data-value="5">5</div>
+        <div class="key" data-value="6">6</div>
+        <div class="key" data-value="7">7</div>
+        <div class="key" data-value="8">8</div>
+        <div class="key" data-value="9">9</div>
+        <div class="key delete" data-value="delete">מחק</div>
+    </div>
+
+    <script>
+        let solution = [];
+        let puzzle = [];
+        let selectedCell = null;
+		
+	
+		// הוספה לפונקציה קיימת של בדיקת פתרון
+		const originalCheckSolution = checkSolution || function() {};
+		checkSolution = function() {
+			const result = originalCheckSolution();
+			if (result) {
+				playSuccessSound();
+			} else {
+				playErrorSound();
+			}
+			return result;
+		};
+
+		function generateSudoku(difficulty) {
+			// יצירת לוח ריק
+			solution = Array(9).fill().map(() => Array(9).fill(0));
+			// יצירת הפתרון המלא
+			fillDiagonal();
+			solveSudoku(solution);
+			
+			// יצירת הפאזל על ידי העתקת הפתרון
+			puzzle = Array(9).fill().map(() => Array(9).fill(0));
+			
+			// מספר התאים שצריך למלא (הפוך ממספר התאים שנסיר)
+			let cellsToFill;
+			switch(difficulty) {
+				case 'easy': cellsToFill = 51; break;    // 81 - 30
+				case 'medium': cellsToFill = 41; break;  // 81 - 40
+				case 'hard': cellsToFill = 31; break;    // 81 - 50
+			}
+			
+			// מילוי רנדומלי של תאים מהפתרון
+			let filledCells = 0;
+			while (filledCells < cellsToFill) {
+				let row = Math.floor(Math.random() * 9);
+				let col = Math.floor(Math.random() * 9);
+				if (puzzle[row][col] === 0) {
+					puzzle[row][col] = solution[row][col];
+					filledCells++;
+				}
+			}
+		}
+
+        function fillDiagonal() {
+            for (let i = 0; i < 9; i += 3) {
+                let nums = [1,2,3,4,5,6,7,8,9];
+                for (let row = i; row < i + 3; row++) {
+                    for (let col = i; col < i + 3; col++) {
+                        let randIndex = Math.floor(Math.random() * nums.length);
+                        solution[row][col] = nums[randIndex];
+                        nums.splice(randIndex, 1);
+                    }
+                }
+            }
+        }
+
+		function updateAllCompletions() {
+			// בדיקת שורות
+			for (let row = 0; row < 9; row++) {
+				const rowCells = Array.from(document.querySelectorAll(`.cell[data-row="${row}"]`));
+				const rowNumbers = new Set();
+				const isRowComplete = rowCells.every(cell => {
+					const value = parseInt(cell.textContent);
+					if (!value || isNaN(value) || value < 1 || value > 9 || rowNumbers.has(value)) {
+						return false;
+					}
+					rowNumbers.add(value);
+					return true;
+				});
+				
+				// סימון רק אם יש בדיוק 9 מספרים שונים
+				const shouldMarkRow = isRowComplete && rowNumbers.size === 9;
+				rowCells.forEach(cell => {
+					cell.classList.toggle('row-completed', shouldMarkRow);
+				});
+			}
+
+			// בדיקת עמודות
+			for (let col = 0; col < 9; col++) {
+				const colCells = Array.from(document.querySelectorAll(`.cell[data-col="${col}"]`));
+				const colNumbers = new Set();
+				const isColComplete = colCells.every(cell => {
+					const value = parseInt(cell.textContent);
+					if (!value || isNaN(value) || value < 1 || value > 9 || colNumbers.has(value)) {
+						return false;
+					}
+					colNumbers.add(value);
+					return true;
+				});
+				
+				// סימון רק אם יש בדיוק 9 מספרים שונים
+				const shouldMarkCol = isColComplete && colNumbers.size === 9;
+				colCells.forEach(cell => {
+					cell.classList.toggle('col-completed', shouldMarkCol);
+				});
+			}
+		}
+
+        function solveSudoku(board) {
+            const empty = findEmpty(board);
+            if (!empty) return true;
+            
+            const [row, col] = empty;
+            for (let num = 1; num <= 9; num++) {
+                if (isValid(board, num, row, col)) {
+                    board[row][col] = num;
+                    if (solveSudoku(board)) return true;
+                    board[row][col] = 0;
+                }
+            }
+            return false;
+        }
+
+        function findEmpty(board) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) return [row, col];
+                }
+            }
+            return null;
+        }
+
+        function isValid(board, num, row, col) {
+            for (let x = 0; x < 9; x++) {
+                if (board[row][x] === num) return false;
+            }
+            
+            for (let x = 0; x < 9; x++) {
+                if (board[x][col] === num) return false;
+            }
+            
+            let boxRow = Math.floor(row/3) * 3;
+            let boxCol = Math.floor(col/3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[boxRow + i][boxCol + j] === num) return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function renderBoard() {
+            const board = document.querySelector('.board');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    if (puzzle[i][j] !== 0) {
+                        cell.className += ' given';
+                        cell.textContent = puzzle[i][j];
+                    } else {
+                        cell.addEventListener('click', selectCell);
+                    }
+                    
+                    board.appendChild(cell);
+                }
+            }
+            
+            selectedCell = null;
+            document.querySelector('.virtual-keyboard').classList.remove('active');
+            document.body.classList.remove('keyboard-active');
+            updateBoxCompletionStatus();
+        }
+
+        // עדכון פונקציית selectCell
+		function selectCell(e) {
+			if (e.target.classList.contains('given')) return;
+			
+			const prevSelected = document.querySelector('.cell.selected');
+			if (prevSelected) {
+				prevSelected.classList.remove('selected');
+			}
+			
+			e.target.classList.add('selected');
+			selectedCell = e.target;
+			
+			// בדיקת שורות ועמודות מלאות בכל בחירת תא
+			updateAllCompletions();
+			
+			document.querySelector('.virtual-keyboard').classList.add('active');
+			document.body.classList.add('keyboard-active');
+		}
+
+        function isBoxCompleted(boxRow, boxCol) {
+            const numbers = new Set();
+            let isValid = true;
+            
+            for (let i = 0; i < 3 && isValid; i++) {
+                for (let j = 0; j < 3 && isValid; j++) {
+                    const row = boxRow * 3 + i;
+                    const col = boxCol * 3 + j;
+                    const cell = document.querySelector(
+                        `.cell[data-row="${row}"][data-col="${col}"]`
+                    );
+                    
+                    const value = cell.textContent;
+                    if (!value || value === '') {
+                        isValid = false;
+                    } else {
+                        const num = parseInt(value);
+                        if (numbers.has(num)) {
+                            isValid = false;
+                        } else {
+                            numbers.add(num);
+                        }
+                    }
+                }
+            }
+            
+            return isValid && numbers.size === 9;
+        }
+
+        function updateBoxCompletionStatus() {
+            for (let boxRow = 0; boxRow < 3; boxRow++) {
+                for (let boxCol = 0; boxCol < 3; boxCol++) {
+                    const cells = [];
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 3; j++) {
+                            const row = boxRow * 3 + i;
+                            const col = boxCol * 3 + j;
+                            cells.push(document.querySelector(
+                                `.cell[data-row="${row}"][data-col="${col}"]`
+                            ));
+                        }
+                    }
+                    
+                                        const isCompleted = isBoxCompleted(boxRow, boxCol);
+                    cells.forEach(cell => {
+                        if (isCompleted) {
+                            cell.style.background = 'var(--completed-bg)';
+                        } else {
+                            cell.style.background = cell.classList.contains('given') ? 
+                                'var(--cell-given-bg)' : 'var(--cell-bg)';
+                        }
+                    });
+                }
+            }
+        }
+
+        // נעדכן את פונקציית initVirtualKeyboard
+		function initVirtualKeyboard() {
+			const keyboard = document.querySelector('.virtual-keyboard');
+			
+			keyboard.addEventListener('click', (e) => {
+				const key = e.target.closest('.key');
+				if (!key || !selectedCell) return;
+
+				const value = key.dataset.value;
+				
+				if (value === 'delete') {
+					selectedCell.textContent = '';
+					selectedCell.classList.remove('invalid');
+				} else {
+					const row = parseInt(selectedCell.dataset.row);
+					const col = parseInt(selectedCell.dataset.col);
+					const num = parseInt(value);
+
+					let tempBoard = puzzle.map(row => [...row]);
+					tempBoard[row][col] = num;
+
+					selectedCell.textContent = value;
+					selectedCell.classList.toggle('invalid', !isValid(tempBoard, num, row, col));
+				}
+				
+				// בדיקת שורות ועמודות מלאות אחרי כל שינוי
+				updateAllCompletions();
+				updateBoxCompletionStatus();
+
+				// בדיקה אוטומטית אם הפתרון הושלם
+				checkAutoCompletion();
+			});
+		}
+
+		function isRowCompleted(rowIndex) {
+			const numbers = new Set();
+			let isValid = true;
+			
+			for (let col = 0; col < 9 && isValid; col++) {
+				const cell = document.querySelector(
+					`.cell[data-row="${rowIndex}"][data-col="${col}"]`
+				);
+				const value = cell.textContent;
+				
+				if (!value || value === '') {
+					isValid = false;
+				} else {
+					const num = parseInt(value);
+					if (numbers.has(num)) {
+						isValid = false;
+					} else {
+						numbers.add(num);
+					}
+				}
+			}
+			
+			return isValid && numbers.size === 9;
+		}
+
+		function isColCompleted(colIndex) {
+			const numbers = new Set();
+			let isValid = true;
+			
+			for (let row = 0; row < 9 && isValid; row++) {
+				const cell = document.querySelector(
+					`.cell[data-row="${row}"][data-col="${colIndex}"]`
+				);
+				const value = cell.textContent;
+				
+				if (!value || value === '') {
+					isValid = false;
+				} else {
+					const num = parseInt(value);
+					if (numbers.has(num)) {
+						isValid = false;
+					} else {
+						numbers.add(num);
+					}
+				}
+			}
+			
+			return isValid && numbers.size === 9;
+		}
+
+		function updateCompletionStatus() {
+			// בדיקת שורות
+			for (let row = 0; row < 9; row++) {
+				const isCompleted = isRowCompleted(row);
+				document.querySelectorAll(`.cell[data-row="${row}"]`).forEach(cell => {
+					cell.classList.toggle('row-completed', isCompleted);
+				});
+			}
+			
+			// בדיקת עמודות
+			for (let col = 0; col < 9; col++) {
+				const isCompleted = isColCompleted(col);
+				document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
+					cell.classList.toggle('col-completed', isCompleted);
+				});
+			}
+			
+			// בדיקת תיבות 3x3 (הקוד הקיים)
+			updateBoxCompletionStatus();
+		}
+		
+		// פונקציה חדשה לבדיקה אוטומטית
+		function checkAutoCompletion() {
+			let isComplete = true;
+			let isCorrect = true;
+			
+			document.querySelectorAll('.cell').forEach((cell, index) => {
+				const value = cell.textContent;
+				const row = parseInt(cell.dataset.row);
+				const col = parseInt(cell.dataset.col);
+				
+				// בדיקה אם התא ריק
+				if (!value) {
+					isComplete = false;
+					return;
+				}
+				
+				// בדיקה אם הערך נכון
+				if (parseInt(value) !== solution[row][col]) {
+					isCorrect = false;
+				}
+			});
+
+			// אם הלוח מלא ונכון - הפעל את אנימציית הסיום
+			if (isComplete && isCorrect) {
+				checkSolution(); // שימוש בפונקציה הקיימת להצגת אנימציית הניצחון
+			}
+		}
+
+
+        // נעדכן את פונקציית הבדיקה
+		function checkSolution() {
+			let isComplete = true;
+			let isCorrect = true;
+			
+			document.querySelectorAll('.cell').forEach((cell, index) => {
+				if (cell.classList.contains('given')) return;
+				
+				const row = parseInt(cell.dataset.row);
+				const col = parseInt(cell.dataset.col);
+				const value = parseInt(cell.textContent);
+				
+				// הוספת אינדקס לאנימציה
+				cell.style.setProperty('--cell-index', index);
+				
+				if (!value) {
+					isComplete = false;
+				} else if (value !== solution[row][col]) {
+					isCorrect = false;
+				}
+			});
+
+			const board = document.querySelector('.board');
+			const message = document.querySelector('.message');
+			message.className = 'message';
+
+			// בדיקה האם הסודוקו הושלם בהצלחה
+			if (isComplete && isCorrect) {
+				// הצגת אנימציית ניצחון
+				board.classList.add('completed');
+				
+				// יצירת הודעת ניצחון אם לא קיימת
+				let victoryMessage = document.querySelector('.victory-message');
+				if (!victoryMessage) {
+					victoryMessage = document.createElement('div');
+					victoryMessage.className = 'victory-message';
+					victoryMessage.textContent = '🎉 כל הכבוד! פתרת את הסודוקו בהצלחה! 🎉';
+					document.body.appendChild(victoryMessage);
+				}
+				
+				// הצגת ההודעה
+				setTimeout(() => {
+					victoryMessage.classList.add('show');
+				}, 500);
+				
+				// הסתרת ההודעה אחרי 3 שניות
+				setTimeout(() => {
+					victoryMessage.classList.remove('show');
+				}, 3500);
+				
+				message.textContent = 'כל הכבוד! פתרת את הסודוקו בהצלחה! 🎉';
+				message.classList.add('show', 'success');
+			} else if (!isComplete) {
+				board.classList.remove('completed');
+				message.textContent = 'נא למלא את כל התאים!';
+				message.classList.add('show', 'error');
+			} else if (!isCorrect) {
+				board.classList.remove('completed');
+				message.textContent = 'הפתרון אינו נכון, נסה שוב!';
+				message.classList.add('show', 'error');
+			}
+			
+			setTimeout(() => {
+				message.classList.remove('show');
+			}, 3000);
+		}
+
+        // נעדכן את פונקציית התחלת המשחק החדש
+		function startGame(difficulty) {
+			generateSudoku(difficulty);
+			renderBoard();
+			document.querySelector('.message').className = 'message';
+			document.querySelector('.board').classList.remove('completed');
+			
+			// הסרת הודעת ניצחון אם קיימת
+			const victoryMessage = document.querySelector('.victory-message');
+			if (victoryMessage) {
+				victoryMessage.classList.remove('show');
+			}
+		}
+
+        // אתחול המשחק
+        initVirtualKeyboard();
+        startGame('easy');
+
+        // מניעת זום במובייל
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+		
+		document.addEventListener('DOMContentLoaded', () => {
+		// יצירת קונטקסט אודיו
+		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+		// פונקציה ליצירת צליל לחיצה
+		function playClickSound() {
+			/*const oscillator = audioContext.createOscillator();
+			const gainNode = audioContext.createGain();
+			
+			oscillator.type = 'sine';
+			oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+			
+			oscillator.connect(gainNode);
+			gainNode.connect(audioContext.destination);
+			
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.1); */
+		}
+
+		// פונקציה ליצירת צליל הצלחה
+		function playSuccessSound() {
+			const oscillator = audioContext.createOscillator();
+			const gainNode = audioContext.createGain();
+			
+			oscillator.type = 'sine';
+			oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+			oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
+			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+			
+			oscillator.connect(gainNode);
+			gainNode.connect(audioContext.destination);
+			
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.3);
+		}
+
+		// פונקציה ליצירת צליל שגיאה
+		function playErrorSound() {
+			const oscillator = audioContext.createOscillator();
+			const gainNode = audioContext.createGain();
+			
+			oscillator.type = 'sine';
+			oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+			oscillator.frequency.setValueAtTime(200, audioContext.currentTime + 0.1);
+			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+			
+			oscillator.connect(gainNode);
+			gainNode.connect(audioContext.destination);
+			
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.2);
+		}
+
+		// מאזין ללחיצות על תאים בלוח
+		document.querySelector('.board').addEventListener('click', (event) => {
+			const cell = event.target.closest('.cell');
+			if (cell) {
+				playClickSound();
+			}
+		});
+		
+		// מאזין ללחיצות על תאים בלוח
+		document.querySelector('.board').addEventListener('click', (event) => {
+			const cell = event.target.closest('.cell');
+			if (cell) {
+				playClickSound();
+			}
+		});
+
+		// מאזין ללחיצות על המקלדת הוירטואלית
+		document.querySelector('.virtual-keyboard').addEventListener('click', (event) => {
+			const key = event.target.closest('.key');
+			if (key) {
+				playClickSound();
+			}
+		});
+
+		// מאזין לכפתור בדיקת פתרון
+		const checkButton = Array.from(document.querySelectorAll('.controls *'))
+			.find(el => el.textContent.trim() === 'בדוק פתרון');
+		
+		if (checkButton) {
+			checkButton.addEventListener('click', () => {
+				// יש להחליף את התנאי הזה עם הלוגיקה האמיתית של בדיקת הפתרון
+				const isCorrect = true; 
+				
+				if (isCorrect) {
+					playSuccessSound();
+				} else {
+					playErrorSound();
+				}
+			});
+		}
+	});
+
+    </script>
+</body>
+</html>
