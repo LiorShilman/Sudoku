@@ -4,29 +4,42 @@
 	<meta charset="UTF-8">
     <title>משחק סודוקו</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-	<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-	
         :root {
-			--primary: #4f46e5;
-			--primary-hover: #4338ca;
-			--bg-color: #0f172a;
-			--cell-bg: #1e293b;
-			--cell-given-bg: #334155;
+			--primary: #6366f1;
+			--primary-light: #818cf8;
+			--primary-dark: #4f46e5;
+			--accent: #06b6d4;
+			--accent-light: #22d3ee;
+			--bg-color: #0c0f1a;
+			--bg-secondary: #131829;
+			--cell-bg: rgba(30, 41, 69, 0.7);
+			--cell-given-bg: rgba(51, 65, 95, 0.8);
 			--text-color: #e2e8f0;
-			--error-color: #ef4444;
-			--success-color: #22c55e;
-			--border-color: #475569;
-			--keyboard-bg: #1e293b;
-			--selected-bg: #3b82f6;
-			--completed-bg: rgba(74, 222, 128, 0.15);
-			--grid-line: rgba(255, 255, 255, 0.1);
-			--block-line: rgba(255, 255, 255, 0.5);
-			--selected-bg: rgba(59, 130, 246, 0.5);
-			--selected-border: #3b82f6;
-			--row-col-completed: rgba(74, 222, 128, 0.05);
+			--text-muted: #94a3b8;
+			--error-color: #f43f5e;
+			--error-glow: rgba(244, 63, 94, 0.3);
+			--success-color: #10b981;
+			--success-glow: rgba(16, 185, 129, 0.3);
+			--border-color: rgba(99, 102, 241, 0.2);
+			--keyboard-bg: rgba(19, 24, 41, 0.95);
+			--selected-bg: rgba(99, 102, 241, 0.35);
+			--selected-border: #818cf8;
+			--completed-bg: rgba(16, 185, 129, 0.12);
+			--grid-line: rgba(148, 163, 184, 0.08);
+			--block-line: rgba(99, 102, 241, 0.4);
+			--row-col-completed: rgba(16, 185, 129, 0.06);
+			--glass: rgba(255, 255, 255, 0.03);
+			--glass-border: rgba(255, 255, 255, 0.06);
 			--font-heading: 'Rubik', sans-serif;
 			--font-body: 'Heebo', sans-serif;
+			--radius-sm: 0.5rem;
+			--radius-md: 0.75rem;
+			--radius-lg: 1rem;
+			--radius-xl: 1.25rem;
+			--shadow-glow: 0 0 30px rgba(99, 102, 241, 0.15);
+			--transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		}
 
         * {
@@ -48,70 +61,235 @@
             padding: 1rem;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+			position: relative;
         }
+
+		/* Animated background */
+		body::before {
+			content: '';
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background:
+				radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+				radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+				radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+			pointer-events: none;
+			z-index: 0;
+			animation: bgShift 15s ease-in-out infinite alternate;
+		}
+
+		@keyframes bgShift {
+			0% { opacity: 0.7; }
+			100% { opacity: 1; }
+		}
+
+		/* Header area */
+		.game-header {
+			position: relative;
+			z-index: 1;
+			text-align: center;
+			margin-bottom: 1.25rem;
+			width: 100%;
+			max-width: 500px;
+		}
 
         h1 {
 			font-family: var(--font-heading);
-			font-weight: 700;
-			font-size: 3rem;
-			margin-bottom: 1.5rem;
+			font-weight: 800;
+			font-size: 2.5rem;
+			margin-bottom: 0.25rem;
 			text-align: center;
-			background: linear-gradient(45deg, var(--primary), #818cf8);
+			background: linear-gradient(135deg, #818cf8 0%, #6366f1 30%, #06b6d4 70%, #22d3ee 100%);
 			-webkit-background-clip: text;
 			-webkit-text-fill-color: transparent;
+			background-clip: text;
 			letter-spacing: -0.02em;
+			filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.3));
 		}
 
+		.subtitle {
+			font-family: var(--font-body);
+			font-size: 0.85rem;
+			color: var(--text-muted);
+			letter-spacing: 0.15em;
+			font-weight: 300;
+		}
+
+		/* Stats bar */
+		.stats-bar {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 1.5rem;
+			margin: 0.75rem 0 1rem;
+			position: relative;
+			z-index: 1;
+		}
+
+		.stat-item {
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			font-size: 0.85rem;
+			color: var(--text-muted);
+			font-family: var(--font-heading);
+		}
+
+		.stat-item .stat-icon {
+			font-size: 1rem;
+			opacity: 0.8;
+		}
+
+		.stat-item .stat-value {
+			color: var(--text-color);
+			font-weight: 600;
+			font-variant-numeric: tabular-nums;
+		}
+
+		.difficulty-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.3rem;
+			padding: 0.25rem 0.75rem;
+			border-radius: 2rem;
+			font-size: 0.75rem;
+			font-weight: 600;
+			font-family: var(--font-heading);
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			border: 1px solid;
+		}
+
+		.difficulty-badge.easy {
+			color: #34d399;
+			border-color: rgba(52, 211, 153, 0.3);
+			background: rgba(52, 211, 153, 0.08);
+		}
+
+		.difficulty-badge.medium {
+			color: #fbbf24;
+			border-color: rgba(251, 191, 36, 0.3);
+			background: rgba(251, 191, 36, 0.08);
+		}
+
+		.difficulty-badge.hard {
+			color: #f87171;
+			border-color: rgba(248, 113, 113, 0.3);
+			background: rgba(248, 113, 113, 0.08);
+		}
+
+		/* Controls */
         .controls {
-            margin: 1rem;
+			position: relative;
+			z-index: 1;
+            margin: 0 0 1.25rem;
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
             justify-content: center;
+			width: 100%;
+			max-width: 500px;
         }
 
         button {
 			font-family: var(--font-heading);
-			font-weight: 500;
+			font-weight: 600;
 			letter-spacing: 0.02em;
-            padding: 0.75rem 1.25rem;
-            font-size: 1rem;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
+            border-radius: var(--radius-md);
+            transition: all var(--transition);
             outline: none;
             touch-action: manipulation;
+			position: relative;
+			overflow: hidden;
         }
+
+		button.btn-difficulty {
+			background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+			box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+		}
+
+		button.btn-difficulty:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+		}
+
+		button.btn-check {
+			background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+			box-shadow: 0 2px 10px rgba(6, 182, 212, 0.25);
+		}
+
+		button.btn-check:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+		}
 
         button:active {
-            transform: scale(0.95);
+            transform: scale(0.96) translateY(0);
         }
 
+		/* Shimmer effect on buttons */
+		button::after {
+			content: '';
+			position: absolute;
+			top: -50%;
+			left: -50%;
+			width: 200%;
+			height: 200%;
+			background: linear-gradient(
+				transparent 0%,
+				rgba(255, 255, 255, 0.05) 50%,
+				transparent 100%
+			);
+			transform: rotate(45deg) translateX(-100%);
+			transition: transform 0.6s;
+		}
+
+		button:hover::after {
+			transform: rotate(45deg) translateX(100%);
+		}
+
+		/* Board container */
         .board-container {
+			position: relative;
+			z-index: 1;
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
             margin: 0 auto;
             margin-bottom: 140px;
         }
 
-		
+		.board-wrapper {
+			position: relative;
+			border-radius: var(--radius-xl);
+			padding: 3px;
+			background: linear-gradient(135deg,
+				rgba(99, 102, 241, 0.4) 0%,
+				rgba(6, 182, 212, 0.2) 50%,
+				rgba(139, 92, 246, 0.3) 100%);
+			box-shadow:
+				var(--shadow-glow),
+				0 20px 60px rgba(0, 0, 0, 0.3),
+				inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		}
 
 		.board {
 			position: relative;
-			background: var(--border-color);
-			border-radius: 1rem;
-			padding: 0.5rem;
+			background: var(--bg-secondary);
+			border-radius: calc(var(--radius-xl) - 2px);
+			padding: 0;
 			display: grid;
 			grid-template-columns: repeat(9, 1fr);
-			gap: 1px;
+			gap: 0;
 			aspect-ratio: 1;
-			box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
-                0 0 20px rgba(0, 0, 255, 0.1),
-                0 0 30px rgba(0, 0, 255, 0.1);
-			animation: neonPulse 2s infinite;
+			overflow: hidden;
 		}
 
 		.cell {
@@ -122,138 +300,320 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 1.5rem;
-			transition: all 0.2s ease;
+			font-size: 1.4rem;
+			transition: all var(--transition);
 			user-select: none;
 			color: var(--text-color);
 			position: relative;
 			border-right: 1px solid var(--grid-line);
 			border-bottom: 1px solid var(--grid-line);
+			cursor: pointer;
+			backdrop-filter: blur(10px);
 		}
 
-		@keyframes neonPulse {
-			0% {
-				box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
-						   0 0 20px rgba(0, 0, 255, 0.1),
-						   0 0 30px rgba(0, 0, 255, 0.1);
-			}
-			50% {
-				box-shadow: 0 0 15px rgba(0, 0, 255, 0.3),
-						   0 0 25px rgba(0, 0, 255, 0.2),
-						   0 0 35px rgba(0, 0, 255, 0.1);
-			}
-			100% {
-				box-shadow: 0 0 10px rgba(0, 0, 255, 0.2),
-						   0 0 20px rgba(0, 0, 255, 0.1),
-						   0 0 30px rgba(0, 0, 255, 0.1);
-			}
+		.cell:hover:not(.given) {
+			background: rgba(99, 102, 241, 0.1);
 		}
 
-		/* קווי הפרדה אנכיים בין הבלוקים */
-		.cell[data-col="3"],
-		.cell[data-col="6"] {
+		/* Block separator lines */
+		.cell[data-col="2"],
+		.cell[data-col="5"] {
 			border-right: 2px solid var(--block-line);
 		}
 
-		/* קווי הפרדה אופקיים בין הבלוקים */
 		.cell[data-row="2"],
 		.cell[data-row="5"] {
 			border-bottom: 2px solid var(--block-line);
 		}
 
-		/* הסרת גבול ימני מהעמודה האחרונה */
 		.cell[data-col="8"] {
 			border-right: none;
 		}
 
-		/* הסרת גבול תחתון מהשורה האחרונה */
 		.cell[data-row="8"] {
 			border-bottom: none;
 		}
 
-		.cell.row-completed {
-			background-color: rgba(74, 222, 128, 0.05) !important;
+		/* First row & first col rounded corners handled by board overflow:hidden */
+
+		.cell.given {
+			background: var(--cell-given-bg);
+			color: #a5b4fc;
+			font-weight: 700;
+			cursor: default;
 		}
 
-		.cell.col-completed {
-			background-color: rgba(74, 222, 128, 0.05) !important;
+		.cell.given::after {
+			content: '';
+			position: absolute;
+			bottom: 2px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 4px;
+			height: 4px;
+			border-radius: 50%;
+			background: rgba(165, 180, 252, 0.3);
 		}
 
-		/* כאשר גם השורה וגם העמודה מושלמות */
-		.cell.row-completed.col-completed {
-			background-color: rgba(74, 222, 128, 0.1) !important;
-		}
-
-		/* כדי לוודא שהתא הנבחר תמיד יהיה בולט יותר */
 		.cell.selected {
 			background: var(--selected-bg) !important;
 			box-shadow: inset 0 0 0 2px var(--selected-border);
+			animation: selectPulse 2.5s ease-in-out infinite;
+			z-index: 2;
 		}
-		
-		.cell.given {
-			background: var(--cell-given-bg);
-			color: #93c5fd;
-			font-weight: 700;
+
+		@keyframes selectPulse {
+			0%, 100% { box-shadow: inset 0 0 0 2px var(--selected-border), 0 0 8px rgba(99, 102, 241, 0.2); }
+			50% { box-shadow: inset 0 0 0 2.5px var(--selected-border), 0 0 15px rgba(99, 102, 241, 0.3); }
+		}
+
+		.cell.same-number {
+			background: rgba(99, 102, 241, 0.12) !important;
 		}
 
 		.cell.invalid {
-			background: rgba(239, 68, 68, 0.2);
+			background: var(--error-glow) !important;
+			color: var(--error-color);
+			animation: shake 0.4s ease;
 		}
 
+		@keyframes shake {
+			0%, 100% { transform: translateX(0); }
+			25% { transform: translateX(-3px); }
+			75% { transform: translateX(3px); }
+		}
+
+		.cell.row-completed {
+			background-color: var(--row-col-completed) !important;
+		}
+
+		.cell.col-completed {
+			background-color: var(--row-col-completed) !important;
+		}
+
+		.cell.row-completed.col-completed {
+			background-color: rgba(16, 185, 129, 0.1) !important;
+		}
+
+		.cell.selected.row-completed,
+		.cell.selected.col-completed {
+			background: var(--selected-bg) !important;
+		}
+
+		/* Number enter animation */
+		@keyframes numberPop {
+			0% { transform: scale(0.5); opacity: 0; }
+			60% { transform: scale(1.15); }
+			100% { transform: scale(1); opacity: 1; }
+		}
+
+		.cell.number-entered {
+			animation: numberPop 0.3s ease;
+		}
+
+		/* Box completion */
         .box-highlight {
             position: absolute;
             pointer-events: none;
             background: transparent;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.4s ease;
         }
 
         .box-highlight.completed {
             background: var(--completed-bg);
-			color: black !important;
         }
-		
-		.cell.selected {
-			background: var(--selected-bg);
-			box-shadow: inset 0 0 0 2px var(--selected-border);
-			animation: selectPulse 2s infinite;
+
+		/* Victory */
+		@keyframes victory-pulse {
+			0%, 100% {
+				box-shadow: 0 0 20px rgba(16, 185, 129, 0.3),
+				            0 0 40px rgba(16, 185, 129, 0.1);
+			}
+			50% {
+				box-shadow: 0 0 30px rgba(16, 185, 129, 0.5),
+				            0 0 60px rgba(16, 185, 129, 0.2);
+			}
 		}
 
-		@keyframes selectPulse {
-			0% { box-shadow: inset 0 0 0 2px var(--selected-border); }
-			50% { box-shadow: inset 0 0 0 3px var(--selected-border); }
-			100% { box-shadow: inset 0 0 0 2px var(--selected-border); }
+		@keyframes cell-victory {
+			0% { background-color: var(--cell-bg); }
+			50% { background-color: rgba(16, 185, 129, 0.2); }
+			100% { background-color: var(--cell-bg); }
 		}
 
-		.cell.row-completed {
-			background: var(--row-col-completed);
+		.board-wrapper.completed {
+			background: linear-gradient(135deg,
+				rgba(16, 185, 129, 0.5) 0%,
+				rgba(52, 211, 153, 0.3) 50%,
+				rgba(16, 185, 129, 0.4) 100%);
 		}
 
-		.cell.col-completed {
-			background: var(--row-col-completed);
+		.board.completed {
+			animation: victory-pulse 2s infinite;
 		}
 
-		/* מניעת הצטלבות של שורה ועמודה מלאות */
-		.cell.row-completed.col-completed {
-			background: var(--row-col-completed);
-			opacity: 0.8;
+		.board.completed .cell {
+			animation: cell-victory 2s infinite;
+			animation-delay: calc(var(--cell-index) * 0.05s);
 		}
 
+		/* Victory overlay */
+		.victory-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(12, 15, 26, 0.85);
+			backdrop-filter: blur(8px);
+			z-index: 2000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.5s ease;
+		}
 
+		.victory-overlay.show {
+			opacity: 1;
+			pointer-events: auto;
+		}
+
+		.victory-card {
+			text-align: center;
+			padding: 2.5rem 3rem;
+			border-radius: var(--radius-xl);
+			background: linear-gradient(135deg, rgba(30, 41, 69, 0.95) 0%, rgba(19, 24, 41, 0.95) 100%);
+			border: 1px solid rgba(16, 185, 129, 0.3);
+			box-shadow: 0 0 40px rgba(16, 185, 129, 0.2),
+			            0 20px 60px rgba(0, 0, 0, 0.4);
+			transform: scale(0.8);
+			transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+			max-width: 90%;
+		}
+
+		.victory-overlay.show .victory-card {
+			transform: scale(1);
+		}
+
+		.victory-card .trophy {
+			font-size: 4rem;
+			margin-bottom: 1rem;
+			display: block;
+			animation: trophyBounce 1s ease infinite;
+		}
+
+		@keyframes trophyBounce {
+			0%, 100% { transform: translateY(0) rotate(0deg); }
+			25% { transform: translateY(-8px) rotate(-5deg); }
+			75% { transform: translateY(-8px) rotate(5deg); }
+		}
+
+		.victory-card h2 {
+			font-family: var(--font-heading);
+			font-size: 1.75rem;
+			font-weight: 700;
+			margin-bottom: 0.5rem;
+			background: linear-gradient(135deg, #34d399, #10b981);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+		}
+
+		.victory-card p {
+			color: var(--text-muted);
+			margin-bottom: 1.5rem;
+			font-size: 1rem;
+		}
+
+		.victory-card .victory-stats {
+			display: flex;
+			justify-content: center;
+			gap: 2rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.victory-card .victory-stat {
+			text-align: center;
+		}
+
+		.victory-card .victory-stat-value {
+			font-family: var(--font-heading);
+			font-size: 1.5rem;
+			font-weight: 700;
+			color: var(--accent-light);
+		}
+
+		.victory-card .victory-stat-label {
+			font-size: 0.75rem;
+			color: var(--text-muted);
+			margin-top: 0.1rem;
+		}
+
+		.victory-card button {
+			background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+			padding: 0.75rem 2rem;
+			font-size: 1rem;
+			border-radius: var(--radius-md);
+			box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+		}
+
+		/* Toast messages */
+        .message {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+			font-weight: 500;
+            text-align: center;
+            z-index: 3000;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            pointer-events: none;
+			backdrop-filter: blur(12px);
+			border: 1px solid transparent;
+        }
+
+        .message.show {
+            opacity: 1;
+			transform: translateX(-50%) translateY(0);
+        }
+
+        .message.error {
+            background: rgba(244, 63, 94, 0.15);
+			border-color: rgba(244, 63, 94, 0.3);
+			color: #fda4af;
+        }
+
+        .message.success {
+            background: rgba(16, 185, 129, 0.15);
+			border-color: rgba(16, 185, 129, 0.3);
+			color: #6ee7b7;
+        }
+
+		/* Virtual keyboard */
         .virtual-keyboard {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: var(--keyboard-bg);
-            padding: 0.5rem;
+			backdrop-filter: blur(20px);
+            padding: 0.75rem 0.5rem;
+			padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(2, auto);
-            gap: 0.25rem;
-            border-top: 2px solid var(--border-color);
+            gap: 0.4rem;
+            border-top: 1px solid var(--glass-border);
             transform: translateY(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000;
+			box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .virtual-keyboard.active {
@@ -261,22 +621,38 @@
         }
 
         .key {
-            height: 45px;
+			font-family: var(--font-heading);
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-            background: var(--cell-bg);
-            border-radius: 0.5rem;
+            font-size: 1.3rem;
+			font-weight: 600;
+            background: rgba(30, 41, 69, 0.6);
+			border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
             cursor: pointer;
             color: var(--text-color);
-            transition: all 0.2s ease;
+            transition: all var(--transition);
+			position: relative;
+			overflow: hidden;
         }
 
+		.key:hover {
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.3);
+		}
+
         .key:active {
-            background: var(--selected-bg);
-            transform: scale(0.95);
+            background: var(--primary);
+            transform: scale(0.93);
+			border-color: var(--primary-light);
         }
+
+		.key.completed-number {
+			opacity: 0.3;
+			pointer-events: none;
+		}
 
         .key[data-value="1"],
         .key[data-value="2"],
@@ -296,123 +672,144 @@
 
         .key.delete {
             grid-column: 5;
-            font-size: 1rem;
+            font-size: 0.85rem;
+			color: var(--error-color);
+			border-color: rgba(244, 63, 94, 0.15);
         }
 
-        .message {
-            position: fixed;
-            top: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-size: 1.1rem;
-            text-align: center;
-            z-index: 1001;
-            transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .message.show {
-            opacity: 1;
-        }
-
-        .message.error {
-            background: var(--error-color);
-        }
-
-        .message.success {
-            background: var(--success-color);
-        }
-		
-		@keyframes victory-pulse {
-			0% {
-				transform: scale(1);
-				box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
-			}
-			70% {
-				transform: scale(1.05);
-				box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
-			}
-			100% {
-				transform: scale(1);
-				box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-			}
+		.key.delete:hover {
+			background: rgba(244, 63, 94, 0.1);
+			border-color: rgba(244, 63, 94, 0.3);
 		}
 
-		@keyframes cell-victory {
-			0% { background-color: var(--cell-bg); }
-			50% { background-color: rgba(74, 222, 128, 0.2); }
-			100% { background-color: var(--cell-bg); }
-		}
-
-		.board.completed {
-			animation: victory-pulse 2s infinite;
-		}
-
-		.board.completed .cell {
-			animation: cell-victory 2s infinite;
-			animation-delay: calc(var(--cell-index) * 0.1s);
-		}
-
-		.victory-message {
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			background: rgba(74, 222, 128, 0.95);
+		.key.delete:active {
+			background: var(--error-color);
 			color: white;
-			padding: 2rem;
-			border-radius: 1rem;
-			font-size: 1.5rem;
-			font-weight: bold;
-			text-align: center;
-			z-index: 1000;
-			opacity: 0;
-			pointer-events: none;
-			transition: opacity 0.3s ease;
 		}
 
-		.victory-message.show {
-			opacity: 1;
+		/* Confetti canvas */
+		#confetti-canvas {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			z-index: 2500;
 		}
-	
+
+		/* Progress dots under board */
+		.progress-bar {
+			display: flex;
+			justify-content: center;
+			gap: 0.3rem;
+			margin-top: 1rem;
+			position: relative;
+			z-index: 1;
+		}
+
+		.progress-segment {
+			width: 2rem;
+			height: 3px;
+			border-radius: 2px;
+			background: rgba(255, 255, 255, 0.08);
+			transition: all 0.5s ease;
+		}
+
+		.progress-segment.filled {
+			background: linear-gradient(90deg, var(--primary), var(--accent));
+			box-shadow: 0 0 6px rgba(99, 102, 241, 0.3);
+		}
 
         @media (max-width: 600px) {
+			h1 {
+				font-size: 2rem;
+			}
+
             .board-container {
                 margin-bottom: 120px;
             }
 
             .cell {
-                font-size: 1.2rem;
-            }
-
-            .key {
-                height: 40px;
                 font-size: 1.1rem;
             }
 
-            button {
-                padding: 0.5rem 1rem;
-                font-size: 0.9rem;
+            .key {
+                height: 42px;
+                font-size: 1.15rem;
             }
+
+            button {
+                padding: 0.55rem 0.9rem;
+                font-size: 0.8rem;
+            }
+
+			.stats-bar {
+				gap: 1rem;
+			}
+
+			.stat-item {
+				font-size: 0.75rem;
+			}
+
+			.victory-card {
+				padding: 2rem 1.5rem;
+			}
+
+			.victory-card h2 {
+				font-size: 1.4rem;
+			}
         }
+
+		@media (max-width: 380px) {
+			.cell {
+				font-size: 0.95rem;
+			}
+
+			.controls {
+				gap: 0.35rem;
+			}
+
+			button {
+				padding: 0.5rem 0.75rem;
+				font-size: 0.75rem;
+			}
+		}
     </style>
 </head>
 <body>
-    <h1>סודוקו</h1>
+	<div class="game-header">
+		<h1>סודוקו</h1>
+		<div class="subtitle">אתגר את המוח שלך</div>
+	</div>
+
+	<div class="stats-bar">
+		<div class="stat-item">
+			<span class="stat-icon">⏱</span>
+			<span class="stat-value" id="timer">00:00</span>
+		</div>
+		<div id="difficulty-display">
+			<span class="difficulty-badge easy">קל</span>
+		</div>
+		<div class="stat-item">
+			<span class="stat-icon">✏</span>
+			<span class="stat-value" id="moves-count">0</span>
+			<span>מהלכים</span>
+		</div>
+	</div>
+
     <div class="controls">
-        <button onclick="startGame('easy')">קל</button>
-        <button onclick="startGame('medium')">בינוני</button>
-        <button onclick="startGame('hard')">קשה</button>
-        <button onclick="checkSolution()">בדוק פתרון</button>
+        <button class="btn-difficulty" onclick="startGame('easy')">קל</button>
+        <button class="btn-difficulty" onclick="startGame('medium')">בינוני</button>
+        <button class="btn-difficulty" onclick="startGame('hard')">קשה</button>
+        <button class="btn-check" onclick="checkSolution()">בדוק פתרון</button>
     </div>
     <div class="message"></div>
     <div class="board-container">
-        <div class="board"></div>
+		<div class="board-wrapper">
+			<div class="board"></div>
+		</div>
+		<div class="progress-bar" id="progress-bar"></div>
     </div>
     <div class="virtual-keyboard">
         <div class="key" data-value="1">1</div>
@@ -424,46 +821,141 @@
         <div class="key" data-value="7">7</div>
         <div class="key" data-value="8">8</div>
         <div class="key" data-value="9">9</div>
-        <div class="key delete" data-value="delete">מחק</div>
+        <div class="key delete" data-value="delete">✕ מחק</div>
     </div>
+
+	<!-- Victory overlay -->
+	<div class="victory-overlay" id="victory-overlay">
+		<div class="victory-card">
+			<span class="trophy">🏆</span>
+			<h2>כל הכבוד!</h2>
+			<p>פתרת את הסודוקו בהצלחה</p>
+			<div class="victory-stats">
+				<div class="victory-stat">
+					<div class="victory-stat-value" id="victory-time">00:00</div>
+					<div class="victory-stat-label">זמן</div>
+				</div>
+				<div class="victory-stat">
+					<div class="victory-stat-value" id="victory-moves">0</div>
+					<div class="victory-stat-label">מהלכים</div>
+				</div>
+			</div>
+			<button onclick="closeVictory()">משחק חדש</button>
+		</div>
+	</div>
+
+	<canvas id="confetti-canvas"></canvas>
 
     <script>
         let solution = [];
         let puzzle = [];
         let selectedCell = null;
-		
-	
-		// הוספה לפונקציה קיימת של בדיקת פתרון
-		const originalCheckSolution = checkSolution || function() {};
-		checkSolution = function() {
-			const result = originalCheckSolution();
-			if (result) {
-				playSuccessSound();
-			} else {
-				playErrorSound();
+		let moveCount = 0;
+		let timerInterval = null;
+		let elapsedSeconds = 0;
+		let currentDifficulty = 'easy';
+		let gameActive = false;
+
+		// Timer functions
+		function startTimer() {
+			stopTimer();
+			elapsedSeconds = 0;
+			updateTimerDisplay();
+			timerInterval = setInterval(() => {
+				elapsedSeconds++;
+				updateTimerDisplay();
+			}, 1000);
+		}
+
+		function stopTimer() {
+			if (timerInterval) {
+				clearInterval(timerInterval);
+				timerInterval = null;
 			}
-			return result;
-		};
+		}
+
+		function updateTimerDisplay() {
+			const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+			const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
+			document.getElementById('timer').textContent = `${mins}:${secs}`;
+		}
+
+		// Move counter
+		function incrementMoves() {
+			moveCount++;
+			document.getElementById('moves-count').textContent = moveCount;
+		}
+
+		// Progress bar
+		function updateProgress() {
+			let filled = 0;
+			let total = 0;
+			document.querySelectorAll('.cell').forEach(cell => {
+				if (!cell.classList.contains('given')) {
+					total++;
+					if (cell.textContent !== '') {
+						filled++;
+					}
+				}
+			});
+
+			const bar = document.getElementById('progress-bar');
+			bar.innerHTML = '';
+			const segments = 9;
+			const filledSegments = total > 0 ? Math.round((filled / total) * segments) : 0;
+
+			for (let i = 0; i < segments; i++) {
+				const seg = document.createElement('div');
+				seg.className = 'progress-segment' + (i < filledSegments ? ' filled' : '');
+				bar.appendChild(seg);
+			}
+		}
+
+		// Update difficulty display
+		function updateDifficultyDisplay(difficulty) {
+			const labels = { easy: 'קל', medium: 'בינוני', hard: 'קשה' };
+			const display = document.getElementById('difficulty-display');
+			display.innerHTML = `<span class="difficulty-badge ${difficulty}">${labels[difficulty]}</span>`;
+		}
+
+		// Highlight same numbers
+		function highlightSameNumbers(num) {
+			document.querySelectorAll('.cell').forEach(cell => {
+				cell.classList.remove('same-number');
+				if (num && cell.textContent === String(num) && !cell.classList.contains('selected')) {
+					cell.classList.add('same-number');
+				}
+			});
+		}
+
+		// Update completed numbers in keyboard
+		function updateKeyboardState() {
+			for (let n = 1; n <= 9; n++) {
+				let count = 0;
+				document.querySelectorAll('.cell').forEach(cell => {
+					if (cell.textContent === String(n)) count++;
+				});
+				const key = document.querySelector(`.key[data-value="${n}"]`);
+				if (key) {
+					key.classList.toggle('completed-number', count >= 9);
+				}
+			}
+		}
 
 		function generateSudoku(difficulty) {
-			// יצירת לוח ריק
 			solution = Array(9).fill().map(() => Array(9).fill(0));
-			// יצירת הפתרון המלא
 			fillDiagonal();
 			solveSudoku(solution);
-			
-			// יצירת הפאזל על ידי העתקת הפתרון
+
 			puzzle = Array(9).fill().map(() => Array(9).fill(0));
-			
-			// מספר התאים שצריך למלא (הפוך ממספר התאים שנסיר)
+
 			let cellsToFill;
 			switch(difficulty) {
-				case 'easy': cellsToFill = 51; break;    // 81 - 30
-				case 'medium': cellsToFill = 41; break;  // 81 - 40
-				case 'hard': cellsToFill = 31; break;    // 81 - 50
+				case 'easy': cellsToFill = 51; break;
+				case 'medium': cellsToFill = 41; break;
+				case 'hard': cellsToFill = 31; break;
 			}
-			
-			// מילוי רנדומלי של תאים מהפתרון
+
 			let filledCells = 0;
 			while (filledCells < cellsToFill) {
 				let row = Math.floor(Math.random() * 9);
@@ -489,51 +981,36 @@
         }
 
 		function updateAllCompletions() {
-			// בדיקת שורות
 			for (let row = 0; row < 9; row++) {
 				const rowCells = Array.from(document.querySelectorAll(`.cell[data-row="${row}"]`));
 				const rowNumbers = new Set();
 				const isRowComplete = rowCells.every(cell => {
 					const value = parseInt(cell.textContent);
-					if (!value || isNaN(value) || value < 1 || value > 9 || rowNumbers.has(value)) {
-						return false;
-					}
+					if (!value || isNaN(value) || value < 1 || value > 9 || rowNumbers.has(value)) return false;
 					rowNumbers.add(value);
 					return true;
 				});
-				
-				// סימון רק אם יש בדיוק 9 מספרים שונים
 				const shouldMarkRow = isRowComplete && rowNumbers.size === 9;
-				rowCells.forEach(cell => {
-					cell.classList.toggle('row-completed', shouldMarkRow);
-				});
+				rowCells.forEach(cell => cell.classList.toggle('row-completed', shouldMarkRow));
 			}
 
-			// בדיקת עמודות
 			for (let col = 0; col < 9; col++) {
 				const colCells = Array.from(document.querySelectorAll(`.cell[data-col="${col}"]`));
 				const colNumbers = new Set();
 				const isColComplete = colCells.every(cell => {
 					const value = parseInt(cell.textContent);
-					if (!value || isNaN(value) || value < 1 || value > 9 || colNumbers.has(value)) {
-						return false;
-					}
+					if (!value || isNaN(value) || value < 1 || value > 9 || colNumbers.has(value)) return false;
 					colNumbers.add(value);
 					return true;
 				});
-				
-				// סימון רק אם יש בדיוק 9 מספרים שונים
 				const shouldMarkCol = isColComplete && colNumbers.size === 9;
-				colCells.forEach(cell => {
-					cell.classList.toggle('col-completed', shouldMarkCol);
-				});
+				colCells.forEach(cell => cell.classList.toggle('col-completed', shouldMarkCol));
 			}
 		}
 
         function solveSudoku(board) {
             const empty = findEmpty(board);
             if (!empty) return true;
-            
             const [row, col] = empty;
             for (let num = 1; num <= 9; num++) {
                 if (isValid(board, num, row, col)) {
@@ -558,11 +1035,9 @@
             for (let x = 0; x < 9; x++) {
                 if (board[row][x] === num) return false;
             }
-            
             for (let x = 0; x < 9; x++) {
                 if (board[x][col] === num) return false;
             }
-            
             let boxRow = Math.floor(row/3) * 3;
             let boxCol = Math.floor(col/3) * 3;
             for (let i = 0; i < 3; i++) {
@@ -570,84 +1045,74 @@
                     if (board[boxRow + i][boxCol + j] === num) return false;
                 }
             }
-            
             return true;
         }
 
         function renderBoard() {
             const board = document.querySelector('.board');
             board.innerHTML = '';
-            
+
             for (let i = 0; i < 9; i++) {
                 for (let j = 0; j < 9; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     cell.dataset.row = i;
                     cell.dataset.col = j;
-                    
+
                     if (puzzle[i][j] !== 0) {
                         cell.className += ' given';
                         cell.textContent = puzzle[i][j];
                     } else {
                         cell.addEventListener('click', selectCell);
                     }
-                    
+
                     board.appendChild(cell);
                 }
             }
-            
+
             selectedCell = null;
             document.querySelector('.virtual-keyboard').classList.remove('active');
-            document.body.classList.remove('keyboard-active');
             updateBoxCompletionStatus();
+			updateProgress();
+			updateKeyboardState();
         }
 
-        // עדכון פונקציית selectCell
 		function selectCell(e) {
 			if (e.target.classList.contains('given')) return;
-			
+
 			const prevSelected = document.querySelector('.cell.selected');
-			if (prevSelected) {
-				prevSelected.classList.remove('selected');
-			}
-			
+			if (prevSelected) prevSelected.classList.remove('selected');
+
 			e.target.classList.add('selected');
 			selectedCell = e.target;
-			
-			// בדיקת שורות ועמודות מלאות בכל בחירת תא
+
+			// Highlight same numbers
+			const val = e.target.textContent;
+			highlightSameNumbers(val ? parseInt(val) : null);
+
 			updateAllCompletions();
-			
 			document.querySelector('.virtual-keyboard').classList.add('active');
-			document.body.classList.add('keyboard-active');
 		}
 
         function isBoxCompleted(boxRow, boxCol) {
             const numbers = new Set();
-            let isValid = true;
-            
-            for (let i = 0; i < 3 && isValid; i++) {
-                for (let j = 0; j < 3 && isValid; j++) {
+            let valid = true;
+            for (let i = 0; i < 3 && valid; i++) {
+                for (let j = 0; j < 3 && valid; j++) {
                     const row = boxRow * 3 + i;
                     const col = boxCol * 3 + j;
-                    const cell = document.querySelector(
-                        `.cell[data-row="${row}"][data-col="${col}"]`
-                    );
-                    
+                    const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
                     const value = cell.textContent;
                     if (!value || value === '') {
-                        isValid = false;
+                        valid = false;
                     } else {
                         const num = parseInt(value);
-                        if (numbers.has(num)) {
-                            isValid = false;
-                        } else {
-                            numbers.add(num);
-                        }
+                        if (numbers.has(num)) valid = false;
+                        else numbers.add(num);
                     }
                 }
             }
-            
-            return isValid && numbers.size === 9;
+            return valid && numbers.size === 9;
         }
 
         function updateBoxCompletionStatus() {
@@ -658,18 +1123,15 @@
                         for (let j = 0; j < 3; j++) {
                             const row = boxRow * 3 + i;
                             const col = boxCol * 3 + j;
-                            cells.push(document.querySelector(
-                                `.cell[data-row="${row}"][data-col="${col}"]`
-                            ));
+                            cells.push(document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`));
                         }
                     }
-                    
-                                        const isCompleted = isBoxCompleted(boxRow, boxCol);
+                    const isCompleted = isBoxCompleted(boxRow, boxCol);
                     cells.forEach(cell => {
                         if (isCompleted) {
                             cell.style.background = 'var(--completed-bg)';
                         } else {
-                            cell.style.background = cell.classList.contains('given') ? 
+                            cell.style.background = cell.classList.contains('given') ?
                                 'var(--cell-given-bg)' : 'var(--cell-bg)';
                         }
                     });
@@ -677,329 +1139,230 @@
             }
         }
 
-        // נעדכן את פונקציית initVirtualKeyboard
 		function initVirtualKeyboard() {
 			const keyboard = document.querySelector('.virtual-keyboard');
-			
+
 			keyboard.addEventListener('click', (e) => {
 				const key = e.target.closest('.key');
 				if (!key || !selectedCell) return;
 
 				const value = key.dataset.value;
-				
+
 				if (value === 'delete') {
 					selectedCell.textContent = '';
-					selectedCell.classList.remove('invalid');
+					selectedCell.classList.remove('invalid', 'number-entered');
 				} else {
 					const row = parseInt(selectedCell.dataset.row);
 					const col = parseInt(selectedCell.dataset.col);
 					const num = parseInt(value);
 
-					let tempBoard = puzzle.map(row => [...row]);
+					let tempBoard = puzzle.map(r => [...r]);
 					tempBoard[row][col] = num;
 
 					selectedCell.textContent = value;
+					selectedCell.classList.remove('number-entered');
+					// Force reflow for animation restart
+					void selectedCell.offsetWidth;
+					selectedCell.classList.add('number-entered');
 					selectedCell.classList.toggle('invalid', !isValid(tempBoard, num, row, col));
+
+					incrementMoves();
+					highlightSameNumbers(num);
 				}
-				
-				// בדיקת שורות ועמודות מלאות אחרי כל שינוי
+
 				updateAllCompletions();
 				updateBoxCompletionStatus();
-
-				// בדיקה אוטומטית אם הפתרון הושלם
+				updateProgress();
+				updateKeyboardState();
 				checkAutoCompletion();
 			});
 		}
 
-		function isRowCompleted(rowIndex) {
-			const numbers = new Set();
-			let isValid = true;
-			
-			for (let col = 0; col < 9 && isValid; col++) {
-				const cell = document.querySelector(
-					`.cell[data-row="${rowIndex}"][data-col="${col}"]`
-				);
-				const value = cell.textContent;
-				
-				if (!value || value === '') {
-					isValid = false;
-				} else {
-					const num = parseInt(value);
-					if (numbers.has(num)) {
-						isValid = false;
-					} else {
-						numbers.add(num);
-					}
-				}
-			}
-			
-			return isValid && numbers.size === 9;
-		}
-
-		function isColCompleted(colIndex) {
-			const numbers = new Set();
-			let isValid = true;
-			
-			for (let row = 0; row < 9 && isValid; row++) {
-				const cell = document.querySelector(
-					`.cell[data-row="${row}"][data-col="${colIndex}"]`
-				);
-				const value = cell.textContent;
-				
-				if (!value || value === '') {
-					isValid = false;
-				} else {
-					const num = parseInt(value);
-					if (numbers.has(num)) {
-						isValid = false;
-					} else {
-						numbers.add(num);
-					}
-				}
-			}
-			
-			return isValid && numbers.size === 9;
-		}
-
-		function updateCompletionStatus() {
-			// בדיקת שורות
-			for (let row = 0; row < 9; row++) {
-				const isCompleted = isRowCompleted(row);
-				document.querySelectorAll(`.cell[data-row="${row}"]`).forEach(cell => {
-					cell.classList.toggle('row-completed', isCompleted);
-				});
-			}
-			
-			// בדיקת עמודות
-			for (let col = 0; col < 9; col++) {
-				const isCompleted = isColCompleted(col);
-				document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(cell => {
-					cell.classList.toggle('col-completed', isCompleted);
-				});
-			}
-			
-			// בדיקת תיבות 3x3 (הקוד הקיים)
-			updateBoxCompletionStatus();
-		}
-		
-		// פונקציה חדשה לבדיקה אוטומטית
 		function checkAutoCompletion() {
 			let isComplete = true;
 			let isCorrect = true;
-			
-			document.querySelectorAll('.cell').forEach((cell, index) => {
+
+			document.querySelectorAll('.cell').forEach(cell => {
 				const value = cell.textContent;
 				const row = parseInt(cell.dataset.row);
 				const col = parseInt(cell.dataset.col);
-				
-				// בדיקה אם התא ריק
-				if (!value) {
-					isComplete = false;
-					return;
-				}
-				
-				// בדיקה אם הערך נכון
-				if (parseInt(value) !== solution[row][col]) {
-					isCorrect = false;
-				}
+				if (!value) { isComplete = false; return; }
+				if (parseInt(value) !== solution[row][col]) isCorrect = false;
 			});
 
-			// אם הלוח מלא ונכון - הפעל את אנימציית הסיום
 			if (isComplete && isCorrect) {
-				checkSolution(); // שימוש בפונקציה הקיימת להצגת אנימציית הניצחון
+				checkSolution();
 			}
 		}
 
+		// Confetti system
+		function launchConfetti() {
+			const canvas = document.getElementById('confetti-canvas');
+			const ctx = canvas.getContext('2d');
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
 
-        // נעדכן את פונקציית הבדיקה
+			const particles = [];
+			const colors = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#22d3ee'];
+
+			for (let i = 0; i < 150; i++) {
+				particles.push({
+					x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+					y: canvas.height / 2,
+					vx: (Math.random() - 0.5) * 15,
+					vy: (Math.random() - 1) * 15 - 5,
+					color: colors[Math.floor(Math.random() * colors.length)],
+					size: Math.random() * 8 + 3,
+					rotation: Math.random() * 360,
+					rotationSpeed: (Math.random() - 0.5) * 10,
+					gravity: 0.15,
+					opacity: 1,
+					decay: 0.005 + Math.random() * 0.01
+				});
+			}
+
+			function animate() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				let alive = false;
+
+				particles.forEach(p => {
+					if (p.opacity <= 0) return;
+					alive = true;
+
+					p.x += p.vx;
+					p.vy += p.gravity;
+					p.y += p.vy;
+					p.rotation += p.rotationSpeed;
+					p.opacity -= p.decay;
+					p.vx *= 0.99;
+
+					ctx.save();
+					ctx.translate(p.x, p.y);
+					ctx.rotate((p.rotation * Math.PI) / 180);
+					ctx.globalAlpha = Math.max(0, p.opacity);
+					ctx.fillStyle = p.color;
+					ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+					ctx.restore();
+				});
+
+				if (alive) requestAnimationFrame(animate);
+				else ctx.clearRect(0, 0, canvas.width, canvas.height);
+			}
+
+			animate();
+		}
+
 		function checkSolution() {
 			let isComplete = true;
 			let isCorrect = true;
-			
+
 			document.querySelectorAll('.cell').forEach((cell, index) => {
 				if (cell.classList.contains('given')) return;
-				
 				const row = parseInt(cell.dataset.row);
 				const col = parseInt(cell.dataset.col);
 				const value = parseInt(cell.textContent);
-				
-				// הוספת אינדקס לאנימציה
 				cell.style.setProperty('--cell-index', index);
-				
-				if (!value) {
-					isComplete = false;
-				} else if (value !== solution[row][col]) {
-					isCorrect = false;
-				}
+				if (!value) isComplete = false;
+				else if (value !== solution[row][col]) isCorrect = false;
 			});
 
 			const board = document.querySelector('.board');
+			const boardWrapper = document.querySelector('.board-wrapper');
 			const message = document.querySelector('.message');
 			message.className = 'message';
 
-			// בדיקה האם הסודוקו הושלם בהצלחה
 			if (isComplete && isCorrect) {
-				// הצגת אנימציית ניצחון
+				gameActive = false;
+				stopTimer();
+
 				board.classList.add('completed');
-				
-				// יצירת הודעת ניצחון אם לא קיימת
-				let victoryMessage = document.querySelector('.victory-message');
-				if (!victoryMessage) {
-					victoryMessage = document.createElement('div');
-					victoryMessage.className = 'victory-message';
-					victoryMessage.textContent = '🎉 כל הכבוד! פתרת את הסודוקו בהצלחה! 🎉';
-					document.body.appendChild(victoryMessage);
-				}
-				
-				// הצגת ההודעה
-				setTimeout(() => {
-					victoryMessage.classList.add('show');
-				}, 500);
-				
-				// הסתרת ההודעה אחרי 3 שניות
-				setTimeout(() => {
-					victoryMessage.classList.remove('show');
-				}, 3500);
-				
-				message.textContent = 'כל הכבוד! פתרת את הסודוקו בהצלחה! 🎉';
+				boardWrapper.classList.add('completed');
+
+				// Show victory overlay
+				const overlay = document.getElementById('victory-overlay');
+				document.getElementById('victory-time').textContent = document.getElementById('timer').textContent;
+				document.getElementById('victory-moves').textContent = moveCount;
+				setTimeout(() => overlay.classList.add('show'), 600);
+
+				launchConfetti();
+
+				message.textContent = 'כל הכבוד! פתרת את הסודוקו בהצלחה!';
 				message.classList.add('show', 'success');
 			} else if (!isComplete) {
 				board.classList.remove('completed');
-				message.textContent = 'נא למלא את כל התאים!';
+				boardWrapper.classList.remove('completed');
+				message.textContent = 'נא למלא את כל התאים';
 				message.classList.add('show', 'error');
 			} else if (!isCorrect) {
 				board.classList.remove('completed');
-				message.textContent = 'הפתרון אינו נכון, נסה שוב!';
+				boardWrapper.classList.remove('completed');
+				message.textContent = 'הפתרון אינו נכון, נסה שוב';
 				message.classList.add('show', 'error');
 			}
-			
-			setTimeout(() => {
-				message.classList.remove('show');
-			}, 3000);
+
+			setTimeout(() => message.classList.remove('show'), 3000);
 		}
 
-        // נעדכן את פונקציית התחלת המשחק החדש
+		function closeVictory() {
+			document.getElementById('victory-overlay').classList.remove('show');
+			startGame(currentDifficulty);
+		}
+
 		function startGame(difficulty) {
+			currentDifficulty = difficulty;
+			moveCount = 0;
+			document.getElementById('moves-count').textContent = '0';
+			gameActive = true;
+
 			generateSudoku(difficulty);
 			renderBoard();
+			updateDifficultyDisplay(difficulty);
+			startTimer();
+
 			document.querySelector('.message').className = 'message';
 			document.querySelector('.board').classList.remove('completed');
-			
-			// הסרת הודעת ניצחון אם קיימת
-			const victoryMessage = document.querySelector('.victory-message');
-			if (victoryMessage) {
-				victoryMessage.classList.remove('show');
-			}
+			document.querySelector('.board-wrapper').classList.remove('completed');
+			document.getElementById('victory-overlay').classList.remove('show');
 		}
 
-        // אתחול המשחק
+        // Init
         initVirtualKeyboard();
         startGame('easy');
 
-        // מניעת זום במובייל
+        // Prevent zoom on mobile
         document.addEventListener('gesturestart', function(e) {
             e.preventDefault();
         });
-		
-		document.addEventListener('DOMContentLoaded', () => {
-		// יצירת קונטקסט אודיו
-		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-		// פונקציה ליצירת צליל לחיצה
-		function playClickSound() {
-			/*const oscillator = audioContext.createOscillator();
-			const gainNode = audioContext.createGain();
-			
-			oscillator.type = 'sine';
-			oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-			
-			oscillator.connect(gainNode);
-			gainNode.connect(audioContext.destination);
-			
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.1); */
-		}
-
-		// פונקציה ליצירת צליל הצלחה
-		function playSuccessSound() {
-			const oscillator = audioContext.createOscillator();
-			const gainNode = audioContext.createGain();
-			
-			oscillator.type = 'sine';
-			oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
-			oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
-			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-			
-			oscillator.connect(gainNode);
-			gainNode.connect(audioContext.destination);
-			
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.3);
-		}
-
-		// פונקציה ליצירת צליל שגיאה
-		function playErrorSound() {
-			const oscillator = audioContext.createOscillator();
-			const gainNode = audioContext.createGain();
-			
-			oscillator.type = 'sine';
-			oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-			oscillator.frequency.setValueAtTime(200, audioContext.currentTime + 0.1);
-			gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-			
-			oscillator.connect(gainNode);
-			gainNode.connect(audioContext.destination);
-			
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.2);
-		}
-
-		// מאזין ללחיצות על תאים בלוח
-		document.querySelector('.board').addEventListener('click', (event) => {
-			const cell = event.target.closest('.cell');
-			if (cell) {
-				playClickSound();
-			}
-		});
-		
-		// מאזין ללחיצות על תאים בלוח
-		document.querySelector('.board').addEventListener('click', (event) => {
-			const cell = event.target.closest('.cell');
-			if (cell) {
-				playClickSound();
+		// Keyboard support
+		document.addEventListener('keydown', (e) => {
+			if (!selectedCell) return;
+			const num = parseInt(e.key);
+			if (num >= 1 && num <= 9) {
+				const key = document.querySelector(`.key[data-value="${num}"]`);
+				if (key) key.click();
+			} else if (e.key === 'Backspace' || e.key === 'Delete') {
+				const key = document.querySelector('.key.delete');
+				if (key) key.click();
 			}
 		});
 
-		// מאזין ללחיצות על המקלדת הוירטואלית
-		document.querySelector('.virtual-keyboard').addEventListener('click', (event) => {
-			const key = event.target.closest('.key');
-			if (key) {
-				playClickSound();
+		// Audio context (lazy init on user interaction)
+		let audioContext = null;
+		function getAudioContext() {
+			if (!audioContext) {
+				audioContext = new (window.AudioContext || window.webkitAudioContext)();
 			}
+			return audioContext;
+		}
+
+		document.querySelector('.board').addEventListener('click', () => {
+			getAudioContext(); // Init on first interaction
 		});
 
-		// מאזין לכפתור בדיקת פתרון
-		const checkButton = Array.from(document.querySelectorAll('.controls *'))
-			.find(el => el.textContent.trim() === 'בדוק פתרון');
-		
-		if (checkButton) {
-			checkButton.addEventListener('click', () => {
-				// יש להחליף את התנאי הזה עם הלוגיקה האמיתית של בדיקת הפתרון
-				const isCorrect = true; 
-				
-				if (isCorrect) {
-					playSuccessSound();
-				} else {
-					playErrorSound();
-				}
-			});
-		}
-	});
-
+		document.querySelector('.virtual-keyboard').addEventListener('click', () => {
+			getAudioContext();
+		});
     </script>
 </body>
 </html>
