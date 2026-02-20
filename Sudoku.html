@@ -671,6 +671,116 @@
 			color: white;
 		}
 
+		/* Action buttons row (notes + hint) */
+		.action-buttons {
+			display: flex;
+			gap: 0.4rem;
+			margin-top: 0.5rem;
+			width: 100%;
+		}
+
+		.btn-action {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.4rem;
+			padding: 0.6rem;
+			font-family: var(--font-heading);
+			font-size: 0.8rem;
+			font-weight: 600;
+			border: 1px solid var(--glass-border);
+			border-radius: var(--radius-md);
+			background: rgba(30, 41, 69, 0.5);
+			color: var(--text-muted);
+			cursor: pointer;
+			transition: all var(--transition);
+			user-select: none;
+		}
+
+		.btn-action:hover {
+			background: rgba(99, 102, 241, 0.1);
+			border-color: rgba(99, 102, 241, 0.3);
+		}
+
+		.btn-action:active {
+			transform: scale(0.95);
+		}
+
+		.btn-action.active {
+			background: rgba(99, 102, 241, 0.2);
+			border-color: var(--primary-light);
+			color: var(--primary-light);
+		}
+
+		.btn-action .action-icon {
+			font-size: 1rem;
+		}
+
+		.btn-action .hint-count {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 1.2rem;
+			height: 1.2rem;
+			border-radius: 50%;
+			background: rgba(251, 191, 36, 0.2);
+			color: #fbbf24;
+			font-size: 0.65rem;
+			font-weight: 700;
+		}
+
+		.btn-action.disabled {
+			opacity: 0.3;
+			pointer-events: none;
+		}
+
+		/* Pencil notes in cells */
+		.cell .notes-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			grid-template-rows: repeat(3, 1fr);
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
+			padding: 1px;
+		}
+
+		.cell .notes-grid .note {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 0.45rem;
+			color: var(--accent-light);
+			font-weight: 500;
+			opacity: 0.8;
+			line-height: 1;
+		}
+
+		@media (min-width: 400px) {
+			.cell .notes-grid .note {
+				font-size: 0.55rem;
+			}
+		}
+
+		@media (min-width: 500px) {
+			.cell .notes-grid .note {
+				font-size: 0.65rem;
+			}
+		}
+
+		/* Hint cell glow */
+		.cell.hint-revealed {
+			animation: hintGlow 1s ease;
+		}
+
+		@keyframes hintGlow {
+			0% { box-shadow: inset 0 0 15px rgba(251, 191, 36, 0.5); }
+			100% { box-shadow: none; }
+		}
+
 		/* Confetti canvas */
 		#confetti-canvas {
 			position: fixed;
@@ -800,6 +910,17 @@
 			<div class="key" data-value="9">9</div>
 			<div class="key delete" data-value="delete">✕</div>
 		</div>
+		<div class="action-buttons">
+			<div class="btn-action" id="btn-notes" onclick="toggleNotesMode()">
+				<span class="action-icon">✎</span>
+				<span>סימון</span>
+			</div>
+			<div class="btn-action" id="btn-hint" onclick="useHint()">
+				<span class="action-icon">💡</span>
+				<span>רמז</span>
+				<span class="hint-count" id="hint-count">1</span>
+			</div>
+		</div>
 		<div class="progress-bar" id="progress-bar"></div>
     </div>
 
@@ -834,6 +955,10 @@
 		let elapsedSeconds = 0;
 		let currentDifficulty = 'easy';
 		let gameActive = false;
+		let notesMode = false;
+		let hintsRemaining = 1;
+		// notes[row][col] = Set of candidate numbers
+		let cellNotes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
 
 		// Timer functions
 		function startTimer() {
@@ -1134,6 +1259,101 @@
             }
         }
 
+		// Notes mode toggle
+		function toggleNotesMode() {
+			notesMode = !notesMode;
+			document.getElementById('btn-notes').classList.toggle('active', notesMode);
+		}
+
+		// Render notes inside a cell
+		function renderNotes(row, col) {
+			const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+			if (!cell || cell.classList.contains('given')) return;
+
+			const notes = cellNotes[row][col];
+			// Remove existing notes grid
+			const existing = cell.querySelector('.notes-grid');
+			if (existing) existing.remove();
+
+			if (notes.size === 0) return;
+
+			// Clear main text
+			cell.textContent = '';
+
+			const grid = document.createElement('div');
+			grid.className = 'notes-grid';
+			for (let n = 1; n <= 9; n++) {
+				const note = document.createElement('div');
+				note.className = 'note';
+				note.textContent = notes.has(n) ? n : '';
+				grid.appendChild(note);
+			}
+			cell.appendChild(grid);
+		}
+
+		// Clear notes from related cells when a number is placed
+		function clearRelatedNotes(row, col, num) {
+			// Same row
+			for (let c = 0; c < 9; c++) {
+				cellNotes[row][c].delete(num);
+				renderNotes(row, c);
+			}
+			// Same col
+			for (let r = 0; r < 9; r++) {
+				cellNotes[r][col].delete(num);
+				renderNotes(r, col);
+			}
+			// Same box
+			const br = Math.floor(row / 3) * 3;
+			const bc = Math.floor(col / 3) * 3;
+			for (let r = br; r < br + 3; r++) {
+				for (let c = bc; c < bc + 3; c++) {
+					cellNotes[r][c].delete(num);
+					renderNotes(r, c);
+				}
+			}
+		}
+
+		// Hint function
+		function useHint() {
+			if (hintsRemaining <= 0 || !selectedCell) return;
+			if (selectedCell.classList.contains('given')) return;
+
+			const row = parseInt(selectedCell.dataset.row);
+			const col = parseInt(selectedCell.dataset.col);
+			const correctValue = solution[row][col];
+
+			// Clear notes for this cell
+			cellNotes[row][col].clear();
+			const existingGrid = selectedCell.querySelector('.notes-grid');
+			if (existingGrid) existingGrid.remove();
+
+			// Place the correct number
+			selectedCell.textContent = correctValue;
+			selectedCell.classList.remove('invalid', 'number-entered');
+			selectedCell.classList.add('hint-revealed');
+			setTimeout(() => selectedCell.classList.remove('hint-revealed'), 1000);
+
+			// Clear related notes
+			clearRelatedNotes(row, col, correctValue);
+
+			hintsRemaining--;
+			updateHintDisplay();
+			incrementMoves();
+
+			updateAllCompletions();
+			updateBoxCompletionStatus();
+			updateProgress();
+			updateKeyboardState();
+			checkAutoCompletion();
+		}
+
+		function updateHintDisplay() {
+			const countEl = document.getElementById('hint-count');
+			countEl.textContent = hintsRemaining;
+			document.getElementById('btn-hint').classList.toggle('disabled', hintsRemaining <= 0);
+		}
+
 		function initVirtualKeyboard() {
 			const keyboard = document.querySelector('.virtual-keyboard');
 
@@ -1142,24 +1362,48 @@
 				if (!key || !selectedCell) return;
 
 				const value = key.dataset.value;
+				const row = parseInt(selectedCell.dataset.row);
+				const col = parseInt(selectedCell.dataset.col);
 
 				if (value === 'delete') {
+					// Clear notes and value
+					cellNotes[row][col].clear();
+					const existingGrid = selectedCell.querySelector('.notes-grid');
+					if (existingGrid) existingGrid.remove();
 					selectedCell.textContent = '';
 					selectedCell.classList.remove('invalid', 'number-entered');
-				} else {
-					const row = parseInt(selectedCell.dataset.row);
-					const col = parseInt(selectedCell.dataset.col);
+				} else if (notesMode) {
+					// Toggle note for this number
 					const num = parseInt(value);
+					const notes = cellNotes[row][col];
+					if (notes.has(num)) {
+						notes.delete(num);
+					} else {
+						notes.add(num);
+					}
+					// Clear definitive value if exists
+					selectedCell.classList.remove('invalid', 'number-entered');
+					renderNotes(row, col);
+				} else {
+					// Definitive number placement
+					const num = parseInt(value);
+
+					// Clear notes for this cell
+					cellNotes[row][col].clear();
+					const existingGrid = selectedCell.querySelector('.notes-grid');
+					if (existingGrid) existingGrid.remove();
 
 					let tempBoard = puzzle.map(r => [...r]);
 					tempBoard[row][col] = num;
 
 					selectedCell.textContent = value;
 					selectedCell.classList.remove('number-entered');
-					// Force reflow for animation restart
 					void selectedCell.offsetWidth;
 					selectedCell.classList.add('number-entered');
 					selectedCell.classList.toggle('invalid', !isValid(tempBoard, num, row, col));
+
+					// Auto-clear notes from related cells
+					clearRelatedNotes(row, col, num);
 
 					incrementMoves();
 					highlightSameNumbers(num);
@@ -1178,9 +1422,11 @@
 			let isCorrect = true;
 
 			document.querySelectorAll('.cell').forEach(cell => {
-				const value = cell.textContent;
 				const row = parseInt(cell.dataset.row);
 				const col = parseInt(cell.dataset.col);
+				// Cell with notes is not filled
+				if (cellNotes[row][col].size > 0) { isComplete = false; return; }
+				const value = cell.textContent;
 				if (!value) { isComplete = false; return; }
 				if (parseInt(value) !== solution[row][col]) isCorrect = false;
 			});
@@ -1308,6 +1554,19 @@
 			moveCount = 0;
 			document.getElementById('moves-count').textContent = '0';
 			gameActive = true;
+
+			// Reset notes
+			cellNotes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
+			notesMode = false;
+			document.getElementById('btn-notes').classList.remove('active');
+
+			// Reset hints based on difficulty
+			switch(difficulty) {
+				case 'easy': hintsRemaining = 1; break;
+				case 'medium': hintsRemaining = 2; break;
+				case 'hard': hintsRemaining = 3; break;
+			}
+			updateHintDisplay();
 
 			generateSudoku(difficulty);
 			renderBoard();
